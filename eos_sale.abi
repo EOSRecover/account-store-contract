@@ -1,0 +1,151 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.2",
+    "types": [],
+    "structs": [
+        {
+            "name": "account",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "eos_account",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "sale",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "buyer",
+                    "type": "name"
+                },
+                {
+                    "name": "purchase_time",
+                    "type": "time_point"
+                },
+                {
+                    "name": "tx_id",
+                    "type": "checksum256"
+                },
+                {
+                    "name": "quantity",
+                    "type": "uint64"
+                },
+                {
+                    "name": "start_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "pubkey",
+                    "type": "string"
+                },
+                {
+                    "name": "purchase_amount",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "setmaxqty",
+            "base": "",
+            "fields": [
+                {
+                    "name": "max_qty",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "setprice",
+            "base": "",
+            "fields": [
+                {
+                    "name": "new_price",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "sold_account",
+            "base": "",
+            "fields": [
+                {
+                    "name": "last_sold_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "price",
+                    "type": "asset"
+                },
+                {
+                    "name": "max_purchase_quantity",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "updaccounts",
+            "base": "",
+            "fields": [
+                {
+                    "name": "new_accounts",
+                    "type": "name[]"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "setmaxqty",
+            "type": "setmaxqty",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setprice",
+            "type": "setprice",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "updaccounts",
+            "type": "updaccounts",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "accounts",
+            "type": "account",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "sales",
+            "type": "sale",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "soldaccounts",
+            "type": "sold_account",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "kv_tables": {},
+    "ricardian_clauses": [],
+    "variants": [],
+    "action_results": []
+}
