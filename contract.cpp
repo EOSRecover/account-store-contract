@@ -64,7 +64,9 @@ public:
 
         auto last_sold_itr = sold_accounts.begin();
         uint64_t last_sold_id = last_sold_itr != sold_accounts.end() ? last_sold_itr->last_sold_id : 0;
-        last_sold_id = last_sold_id > 200 ? last_sold_id - 200 : 0;
+
+        uint64_t max_purchase_quantity = last_sold_itr->max_purchase_quantity;
+        last_sold_id = last_sold_id > max_purchase_quantity ? last_sold_id - max_purchase_quantity : 0;
 
         // 清除已售出的账户，但保留最后售出的200条记录
         auto account_itr = accounts.begin();
@@ -111,7 +113,7 @@ public:
 private:
     void purchase(name buyer, uint64_t bytes, std::string memo){
 
-        if (memo.substr(0, 4) != "buy-") {
+        if (memo.size() < 4 || memo.substr(0, 4) != "buy-") {
 
             return;
         }
