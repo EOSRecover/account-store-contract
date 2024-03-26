@@ -50,6 +50,18 @@ public:
         purchase(from, bytes, memo);
     }
 
+    [[eosio::on_notify("eosio.wram::transfer")]]
+    void on_wram_transfer(name from, name to, asset quantity, std::string memo) {
+        if (from == get_self() || to != get_self() || quantity.symbol != symbol("WRAM", 4)) {
+            return; // 只处理接收到WRAM的转账
+        }
+
+        check(quantity.amount > 0, "Quantity must be positive");
+
+        // 直接使用接收到的 WRAM 数量进行购买处理
+        purchase(from, quantity.amount, memo);
+    }
+
     [[eosio::action]]
     void updaccounts(const std::vector<name>& new_accounts) {
         // 确保只有合约拥有者可以调用此action
