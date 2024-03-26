@@ -8,6 +8,7 @@
 #include <vector>
 #include <array>
 
+#define RAM_RECOVER_ACCOUNT "ram.recover"_n
 using namespace eosio;
 
 class [[eosio::contract("eos_sale")]] eos_sale : public contract {
@@ -22,7 +23,7 @@ public:
         if (itr == sold_accounts.end()) {
             sold_accounts.emplace(get_self(), [&](auto& row) {
                 row.last_sold_id = 0;
-                row.price = asset(2048, symbol("WRAM", 0)); // 默认价格为 1024 WRAM
+                row.price = asset(2048, symbol("WRAM", 0)); // 默认价格为 2048 WRAM
             });
         }
     }
@@ -52,11 +53,19 @@ public:
 
     [[eosio::on_notify("eosio.wram::transfer")]]
     void on_wram_transfer(name from, name to, asset quantity, std::string memo) {
-        if (from == get_self() || to != get_self() || quantity.symbol != symbol("WRAM", 4)) {
+        if (from == get_self() || to != get_self() || quantity.symbol != symbol("WRAM", 0)) {
             return; // 只处理接收到WRAM的转账
         }
 
         check(quantity.amount > 0, "Quantity must be positive");
+
+        // 把WRAM换成RAM
+        action(
+            permission_level{get_self(), "active"_n},
+            "eosio.wram"_n, 
+            "transfer"_n,
+            std::make_tuple(get_self(), "eosio.wram"_n, quantity, std::string(""))
+        ).send();
 
         // 直接使用接收到的 WRAM 数量进行购买处理
         purchase(from, quantity.amount, memo);
@@ -261,7 +270,8 @@ private:
             }
         }
 
-        uint64_t remaining = quantity.amount - (accounts_to_sell * price.amount);
+        uint64_t total_amount = (accounts_to_sell * price.amount);
+        uint64_t remaining = quantity.amount - total_amount;
         asset remaining_asset = asset(remaining, quantity.symbol);
 
         // 记录销售信息
@@ -277,6 +287,14 @@ private:
             s.purchase_amount = quantity; // 记录购买金额或RAM
             s.remaining_amount = remaining_asset;
         });
+
+        // 资金转移到指定账户
+        action(
+            permission_level{get_self(), "active"_n},
+            "eosio"_n, 
+            "ramtransfer"_n,
+            std::make_tuple(get_self(), RAM_RECOVER_ACCOUNT, total_amount, std::string(""))
+        ).send();
 
         // 返还剩余RAM
         if (remaining > 0) {
