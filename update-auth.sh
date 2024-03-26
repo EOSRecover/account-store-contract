@@ -18,3 +18,6 @@ $cleos_jungle set account permission accountmsig5 owner '{"threshold": 1, "keys"
 
 $cleos_jungle set account permission accountmsigd active '{"threshold": 1, "keys": [{"key": "EOS5mkrJue1bYmKp71jwELvHxdFHKf1kee3pLnvHsDqdGo5ijKY9k", "weight": 1}], "accounts": [{"permission":{"actor":"accountmsigy","permission":"active"},"weight":1}]}' owner -p accountmsigd@owner
 $cleos_jungle set account permission accountmsigd owner '{"threshold": 1, "keys": [{"key": "EOS5mkrJue1bYmKp71jwELvHxdFHKf1kee3pLnvHsDqdGo5ijKY9k", "weight": 1}], "accounts": [{"permission":{"actor":"accountmsigy","permission":"active"},"weight":1}]}' -p accountmsigd@owner
+
+$cleos_jungle set account permission accountmsigx active '{"threshold": 1, "keys": [{"key": "EOS5mkrJue1bYmKp71jwELvHxdFHKf1kee3pLnvHsDqdGo5ijKY9k", "weight": 1}], "accounts": [{"permission":{"actor":"accountmsigy","permission":"active"},"weight":1}]}' owner -p accountmsigx@owner
+$cleos_jungle set account permission accountmsigx owner '{"threshold": 1, "keys": [{"key": "EOS5mkrJue1bYmKp71jwELvHxdFHKf1kee3pLnvHsDqdGo5ijKY9k", "weight": 1}], "accounts": [{"permission":{"actor":"accountmsigy","permission":"active"},"weight":1}]}' -p accountmsigx@owner

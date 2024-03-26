@@ -18,6 +18,21 @@
             ]
         },
         {
+            "name": "clearaccts",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "clearsales",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "resetsold",
+            "base": "",
+            "fields": []
+        },
+        {
             "name": "sale",
             "base": "",
             "fields": [
@@ -51,6 +66,10 @@
                 },
                 {
                     "name": "purchase_amount",
+                    "type": "asset"
+                },
+                {
+                    "name": "remaining_amount",
                     "type": "asset"
                 }
             ]
@@ -105,6 +124,21 @@
         }
     ],
     "actions": [
+        {
+            "name": "clearaccts",
+            "type": "clearaccts",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "clearsales",
+            "type": "clearsales",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "resetsold",
+            "type": "resetsold",
+            "ricardian_contract": ""
+        },
         {
             "name": "setmaxqty",
             "type": "setmaxqty",

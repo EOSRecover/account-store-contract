@@ -47,10 +47,6 @@ public:
             return; // 只处理接收到RAM的转账
         }
 
-        if (memo.substr(0, 4) != "buy-") {
-
-            return;
-        }
         purchase(from, bytes, memo);
     }
 
@@ -110,6 +106,49 @@ public:
         });
     }
 
+    // 添加清除 accounts 表的 action
+    [[eosio::action]]
+    void clearaccts() {
+        require_auth(get_self());
+
+        accounts_table accounts(get_self(), get_self().value);
+
+        // 遍历并删除 accounts 表中的所有记录
+        auto itr = accounts.begin();
+        while (itr != accounts.end()) {
+            itr = accounts.erase(itr);
+        }
+    }
+
+    // 添加清除 sales 表的 action
+    [[eosio::action]]
+    void clearsales() {
+        require_auth(get_self());
+
+        sales_table sales(get_self(), get_self().value);
+
+        // 遍历并删除 sales 表中的所有记录
+        auto itr = sales.begin();
+        while (itr != sales.end()) {
+            itr = sales.erase(itr);
+        }
+    }
+
+    // 添加重置 sold_accounts 表的 last_sold_id 的 action
+    [[eosio::action]]
+    void resetsold() {
+        require_auth(get_self());
+
+        sold_accounts_table sold_accounts(get_self(), get_self().value);
+
+        auto itr = sold_accounts.begin();
+        if (itr != sold_accounts.end()) {
+            sold_accounts.modify(itr, get_self(), [&](auto& row) {
+                row.last_sold_id = 0;
+            });
+        }
+    }
+
 private:
     void purchase(name buyer, uint64_t bytes, std::string memo){
 
@@ -120,32 +159,19 @@ private:
 
         check(bytes > 0, "Bytes must be positive");
 
-        auto sold_account_itr = sold_accounts.begin();
-        check(sold_account_itr != sold_accounts.end(), "Sold accounts table not initialized");
-        auto price = sold_account_itr->price;
-
-        uint64_t accounts_to_sell = bytes / price.amount; // 1kb RAM = 1 account
-
         // 调用process_purchase函数处理购买逻辑
-        process_purchase(buyer, accounts_to_sell, memo.substr(4), asset(bytes, symbol("WRAM", 0)));
-
-        // 返还剩余RAM
-        uint64_t remaining = bytes - (accounts_to_sell * price.amount);
-        if (remaining > 0) {
-            action(
-                permission_level{get_self(), "active"_n},
-                "eosio"_n, 
-                "ramtransfer"_n,
-                std::make_tuple(get_self(), buyer, remaining, std::string("Remaining RAM after purchase"))
-            ).send();
-        }
+        process_purchase(buyer, memo.substr(4), asset(bytes, symbol("WRAM", 0)));
     }
 
-    void process_purchase(name buyer, uint64_t accounts_to_sell, std::string memo, asset quantity) {
-        check(accounts_to_sell > 0, "Amount is not enough to buy an account");
+    void process_purchase(name buyer, std::string memo, asset quantity) {
 
         auto sold_account_itr = sold_accounts.begin();
         check(sold_account_itr != sold_accounts.end(), "Sold accounts table not initialized");
+
+        auto price = sold_account_itr->price;
+        uint64_t accounts_to_sell = quantity.amount / price.amount;
+
+        check(accounts_to_sell > 0, "Amount is not enough to buy an account");
 
         // 检查购买数量是否超过最大购买数量
         check(accounts_to_sell <= sold_account_itr->max_purchase_quantity, "Cannot purchase more than the maximum allowed quantity");
@@ -223,6 +249,9 @@ private:
             }
         }
 
+        uint64_t remaining = quantity.amount - (accounts_to_sell * price.amount);
+        asset remaining_asset = asset(remaining, quantity.symbol);
+
         // 记录销售信息
         auto tx_id = get_trx_id();
         sales.emplace(get_self(), [&](auto& s) {
@@ -234,20 +263,18 @@ private:
             s.start_id = accounts_to_update.front();
             s.pubkey = memo;
             s.purchase_amount = quantity; // 记录购买金额或RAM
+            s.remaining_amount = remaining_asset;
         });
 
-        // 使用buyer作为scope冗余存储购买记录
-        sales_table buyer_sales(get_self(), buyer.value);
-        buyer_sales.emplace(get_self(), [&](auto& s) {
-            s.id = buyer_sales.available_primary_key();
-            s.buyer = buyer;
-            s.purchase_time = current_time_point();
-            s.tx_id = tx_id;
-            s.quantity = accounts_to_sell;
-            s.start_id = accounts_to_update.front();
-            s.pubkey = memo;
-            s.purchase_amount = quantity; // 记录购买金额或RAM
-        });
+        // 返还剩余RAM
+        if (remaining > 0) {
+            action(
+                permission_level{get_self(), "active"_n},
+                "eosio"_n, 
+                "ramtransfer"_n,
+                std::make_tuple(get_self(), buyer, remaining, std::string("Remaining RAM after purchase"))
+            ).send();
+        }
     }
 
     struct key_weight {
@@ -306,6 +333,7 @@ private:
         uint64_t primary_key() const { return 0; } // Singleton table
     };
 
+    // 修改 sale 结构体，添加 buyer 作为二级索引
     struct [[eosio::table]] sale {
         uint64_t      id;
         name          buyer;
@@ -315,13 +343,20 @@ private:
         uint64_t      start_id;
         std::string   pubkey;
         asset         purchase_amount; // 购买金额或RAM
+        asset         remaining_amount; // 剩余金额
 
         uint64_t primary_key() const { return id; }
+        uint64_t by_buyer() const { return buyer.value; } // 二级索引
     };
+
+    // 修改 sales 表的定义，添加二级索引
+    typedef eosio::multi_index<
+        "sales"_n, sale,
+        indexed_by<"bybuyer"_n, const_mem_fun<sale, uint64_t, &sale::by_buyer>>
+    > sales_table;
 
     typedef eosio::multi_index<"accounts"_n, account> accounts_table;
     typedef eosio::multi_index<"soldaccounts"_n, sold_account> sold_accounts_table;
-    typedef eosio::multi_index<"sales"_n, sale> sales_table;
 
     sold_accounts_table sold_accounts;
 
@@ -332,7 +367,6 @@ private:
         check(size == read, "read_transaction failed");
         return sha256(buf, read);
     }
-
 
     const char* base58_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     std::vector<uint8_t> base58_to_binary(const std::string& input) {
