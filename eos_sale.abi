@@ -28,6 +28,20 @@
             "fields": []
         },
         {
+            "name": "log",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyer",
+                    "type": "name"
+                },
+                {
+                    "name": "message",
+                    "type": "string"
+                }
+            ]
+        },
+        {
             "name": "resetsold",
             "base": "",
             "fields": []
@@ -132,6 +146,11 @@
         {
             "name": "clearsales",
             "type": "clearsales",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "log",
+            "type": "log",
             "ricardian_contract": ""
         },
         {

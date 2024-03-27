@@ -180,6 +180,13 @@ public:
         }
     }
 
+    [[eosio::action]]
+    void log(name buyer, std::string message) {
+
+        // 输出通知消息到日志
+        require_recipient(buyer);
+    }
+
 private:
     void purchase(name buyer, uint64_t bytes, std::string memo){
 
@@ -310,18 +317,18 @@ private:
             std::make_tuple(get_self(), RAM_RECOVER_ACCOUNT, total_amount, std::string(""))
         ).send();
 
-        notification_message.pop_back(); // 移除最后一个逗号
-        if (remaining == 0) {
 
-            remaining = 1;
+        if (remaining > 0){
+            action(
+                permission_level{get_self(), "active"_n},
+                "eosio"_n, 
+                "ramtransfer"_n,
+                std::make_tuple(get_self(), buyer, remaining, "Remaining RAM after purchase")
+            ).send();
         }
 
-        action(
-            permission_level{get_self(), "active"_n},
-            "eosio"_n, 
-            "ramtransfer"_n,
-            std::make_tuple(get_self(), buyer, remaining, notification_message)
-        ).send();
+        notification_message.pop_back(); // 移除最后一个逗号
+        notify(buyer, notification_message);
     }
 
     struct key_weight {
@@ -515,5 +522,15 @@ private:
         eosio::check(itr != market.end(), "RAM market not found");
 
         return (double)itr->quote.balance.amount / (double)itr->base.balance.amount;
+    }
+
+    void notify(name to, std::string message) {
+        // 调用 log 动作记录通知消息
+        action(
+            permission_level{get_self(), "active"_n},
+            get_self(),
+            "log"_n,
+            std::make_tuple(to, message)
+        ).send();
     }
 };
