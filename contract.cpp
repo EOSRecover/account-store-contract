@@ -225,6 +225,9 @@ private:
 
         check(accounts_to_update.size() == accounts_to_sell, "Not enough unsold accounts available");
 
+        // 发送通知给购买者
+        std::string notification_message = "";
+
         for (const auto& acc_id : accounts_to_update) {
             auto acc_itr = accounts.find(acc_id);
             if (acc_itr != accounts.end()) {
@@ -263,6 +266,7 @@ private:
                     )
                 ).send();
 
+                notification_message += acc_itr->eos_account.to_string() + ",";
             }
         }
 
@@ -306,15 +310,18 @@ private:
             std::make_tuple(get_self(), RAM_RECOVER_ACCOUNT, total_amount, std::string(""))
         ).send();
 
-        // 返还剩余RAM
-        if (remaining > 0) {
-            action(
-                permission_level{get_self(), "active"_n},
-                "eosio"_n, 
-                "ramtransfer"_n,
-                std::make_tuple(get_self(), buyer, remaining, std::string("Remaining RAM after purchase"))
-            ).send();
+        notification_message.pop_back(); // 移除最后一个逗号
+        if (remaining == 0) {
+
+            remaining = 1;
         }
+
+        action(
+            permission_level{get_self(), "active"_n},
+            "eosio"_n, 
+            "ramtransfer"_n,
+            std::make_tuple(get_self(), buyer, remaining, notification_message)
+        ).send();
     }
 
     struct key_weight {
