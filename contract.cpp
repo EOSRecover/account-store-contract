@@ -61,7 +61,7 @@ public:
         if (from == get_self() || to != get_self() || quantity.symbol != symbol("WRAM", 0)) {
             return; // 只处理接收到WRAM的转账
         }
-        
+
         if (memo.size() < 4 || memo.substr(0, 4) != "buy-") {
 
             return;
@@ -95,7 +95,7 @@ public:
         uint64_t max_purchase_quantity = last_sold_itr->max_purchase_quantity;
         last_sold_id = last_sold_id > max_purchase_quantity ? last_sold_id - max_purchase_quantity : 0;
 
-        // 清除已售出的账户，但保留最后售出的200条记录
+        // 清除已售出的账户，但保留最后售出的1000条记录
         auto account_itr = accounts.begin();
         while (account_itr != accounts.end() && account_itr->id < last_sold_id) {
 
@@ -369,7 +369,7 @@ private:
     struct [[eosio::table]] sold_account {
         uint64_t last_sold_id;
         asset    price; // 每个账户的单价（RAM）
-        uint64_t max_purchase_quantity = 200; // 默认最大购买数量为 200
+        uint64_t max_purchase_quantity = 1000; // 默认最大购买数量为 1000
         uint64_t primary_key() const { return 0; } // Singleton table
     };
 
