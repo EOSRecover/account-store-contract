@@ -34,6 +34,11 @@ public:
             return; // 只处理接收到EOS的转账
         }
 
+        if (memo.size() < 4 || memo.substr(0, 4) != "buy-") {
+
+            return;
+        }
+
         check(quantity.amount > 0, "Quantity must be positive");
 
         // 卖出 EOS 并获取获得的 RAM 数量
@@ -55,6 +60,11 @@ public:
     void on_wram_transfer(name from, name to, asset quantity, std::string memo) {
         if (from == get_self() || to != get_self() || quantity.symbol != symbol("WRAM", 0)) {
             return; // 只处理接收到WRAM的转账
+        }
+        
+        if (memo.size() < 4 || memo.substr(0, 4) != "buy-") {
+
+            return;
         }
 
         check(quantity.amount > 0, "Quantity must be positive");
