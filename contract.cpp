@@ -298,7 +298,8 @@ private:
         // 记录销售信息
         auto tx_id = get_trx_id();
         sales.emplace(get_self(), [&](auto& s) {
-            s.id = sales.available_primary_key();
+            auto id = sales.available_primary_key();
+            s.id = id == 0 ? 1 : id;
             s.buyer = buyer;
             s.purchase_time = current_time_point();
             s.tx_id = tx_id;
