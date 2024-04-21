@@ -9,8 +9,8 @@
 #include <array>
 
 #define RAM_RECOVER_ACCOUNT "ram.recover"_n
-#define EOSEYES_ACCOUNT "recover"_n
-//#define EOSEYES_ACCOUNT "eoseyes.com"_n
+//#define EOSEYES_ACCOUNT "recover"_n
+#define EOSEYES_ACCOUNT "eoseyes.com"_n
 
 using namespace eosio;
 
@@ -78,6 +78,32 @@ public:
             "eosio.wram"_n, 
             "transfer"_n,
             std::make_tuple(get_self(), "eosio.wram"_n, quantity, std::string(""))
+        ).send();
+
+        // 直接使用接收到的 WRAM 数量进行购买处理
+        purchase(from, quantity.amount, memo);
+    }
+
+
+    [[eosio::on_notify("ram.defi::transfer")]]
+    void on_bram_transfer(name from, name to, asset quantity, std::string memo) {
+        if (from == get_self() || to != get_self() || quantity.symbol != symbol("BRAM", 0)) {
+            return; // 只处理接收到bRAM的转账
+        }
+
+        if (memo.size() < 4 || memo.substr(0, 4) != "buy-") {
+
+            return;
+        }
+
+        check(quantity.amount > 0, "Quantity must be positive");
+
+        // 把BRAM换成RAM
+        action(
+            permission_level{get_self(), "active"_n},
+            "ram.defi"_n,
+            "transfer"_n,
+            std::make_tuple(get_self(), "ram.defi"_n, quantity, std::string("ram"))
         ).send();
 
         // 直接使用接收到的 WRAM 数量进行购买处理
@@ -333,7 +359,7 @@ private:
                 permission_level{get_self(), "active"_n},
                 "eosio"_n,
                 "ramtransfer"_n,
-                std::make_tuple(get_self(), EOSEYES_ACCOUNT, commission_amount, std::string("Support build eoseyes.com"))
+                std::make_tuple(get_self(), EOSEYES_ACCOUNT, commission_amount, std::string("Referral bonus"))
             ).send();
 
             total_amount = total_amount - commission_amount;
