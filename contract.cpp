@@ -9,6 +9,9 @@
 #include <array>
 
 #define RAM_RECOVER_ACCOUNT "ram.recover"_n
+#define EOSEYES_ACCOUNT "recover"_n
+//#define EOSEYES_ACCOUNT "eoseyes.com"_n
+
 using namespace eosio;
 
 class [[eosio::contract("eos_sale")]] eos_sale : public contract {
@@ -214,7 +217,18 @@ private:
         // 检查购买数量是否超过最大购买数量
         check(accounts_to_sell <= sold_account_itr->max_purchase_quantity, "Cannot purchase more than the maximum allowed quantity");
 
-        auto pubkey = is_valid_pubkey(memo); // 校验公钥并获取公钥对象
+        std::string public_key;
+        bool commission = false;
+        if (memo.find("-eoseyes") != std::string::npos) {
+
+            public_key = memo.substr(0, memo.find("-eoseyes"));
+            commission = true;
+        } else {
+
+            public_key = memo;
+        }
+
+        auto pubkey = is_valid_pubkey(public_key); // 校验公钥并获取公钥对象
 
         accounts_table accounts(get_self(), get_self().value);
         sold_accounts_table sold_accounts(get_self(), get_self().value);
@@ -309,6 +323,21 @@ private:
             s.purchase_amount = quantity; // 记录购买金额或RAM
             s.remaining_amount = remaining_asset;
         });
+
+        // 执行返佣逻辑
+        if (commission) {
+            uint64_t commission_amount = (total_amount * 5) / 100; // 计算5%的返佣
+
+            // 发送返佣到固定账户 eoseyes.com
+            action(
+                permission_level{get_self(), "active"_n},
+                "eosio"_n,
+                "ramtransfer"_n,
+                std::make_tuple(get_self(), EOSEYES_ACCOUNT, commission_amount, std::string("Support build eoseyes.com"))
+            ).send();
+
+            total_amount = total_amount - commission_amount;
+        }
 
         // 资金转移到指定账户
         action(
