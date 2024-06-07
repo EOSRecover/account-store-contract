@@ -274,6 +274,7 @@ private:
 
         // 发送通知给购买者
         std::string notification_message = "";
+        uint64_t base_amount = 128;
 
         for (const auto& acc_id : accounts_to_update) {
             auto acc_itr = accounts.find(acc_id);
@@ -313,6 +314,14 @@ private:
                     )
                 ).send();
 
+                // 额外转入 128b
+                action(
+                    permission_level{get_self(), "active"_n},
+                    "eosio"_n,
+                    "ramtransfer"_n,
+                    std::make_tuple(get_self(), acc_itr->eos_account, base_amount, std::string(""))
+                ).send();
+
                 notification_message += acc_itr->eos_account.to_string() + ",";
             }
         }
@@ -334,6 +343,9 @@ private:
         uint64_t total_amount = (accounts_to_sell * price.amount);
         uint64_t remaining = quantity.amount - total_amount;
         asset remaining_asset = asset(remaining, quantity.symbol);
+
+        // 因为提取RAM的原因，这里固定要减去 128b
+        total_amount = total_amount - base_amount;
 
         // 记录销售信息
         auto tx_id = get_trx_id();
